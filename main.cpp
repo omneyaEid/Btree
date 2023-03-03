@@ -7,130 +7,105 @@
 #include<bits/stdc++.h>
 
 using namespace std;
-class data
-{
+class data {
 public:
     int key;
     int address;
-    data ()
-    {
+    data () {
         key = 0;
         address = 0;
     }
 };
-class BtreeNode
-{
+
+class BtreeNode {
 public:
     data * keys;
     int leaf;
-    //int *children; //array to hold the RRN Of Children
-    BtreeNode ()
-    {
+    BtreeNode () {
         leaf = 0;
         keys = new data[5];
     }
 };
-BtreeNode new_node (fstream & indexfile, int order, int NumberOfRecords)	//return Node
-{
+
+//return Node
+BtreeNode new_node (fstream & indexfile, int order, int NumberOfRecords) {
     int order1 = order;
     BtreeNode n;
     indexfile.seekp (0, ios::end);
     int RRN = indexfile.tellp () / sizeof (n);
     n.leaf = -1;
-    for (int i = 0; i < order1; i++)	// initialize the keys in the array
-    {
+    // initialize the keys in the array
+    for (int i = 0; i < order1; i++) {
         n.keys[i].key = -1;
-
         n.keys[i].address = -1;
     }
-    if (RRN < NumberOfRecords - 1)
-
-    {
+    if (RRN < NumberOfRecords - 1) {
         n.keys[0].key = RRN + 1;
-
-        //cout<<"RRN : "<<RRN<<endl;
         return n;
     }
-    else
-    {
+    else{
         return n;
     }
 }
-void print_node_keys (BtreeNode node, int order)
-{
+
+void print_node_keys (BtreeNode node, int order) {
     cout << "[";
     cout << node.leaf << "   ";
-    for (std::size_t i = 0; i < order; i++)
-
-    {
+    for (std::size_t i = 0; i < order; i++) {
         cout << "|" << node.keys[i].key << "," << node.keys[i].
              address << "|" << "   ";
     };
-
     cout << "] " << endl;
 }
-void CreateIndexFile (string FileName, int NumberOfRecords)
-{
+
+void CreateIndexFile (string FileName, int NumberOfRecords) {
     fstream Btreefile;
     Btreefile.open (FileName.c_str (), ios::out);
     int order = 5;
-    for (int i = 0; i < NumberOfRecords; i++)
-
-    {
+    for (int i = 0; i < NumberOfRecords; i++) {
         BtreeNode node = new_node (Btreefile, order, NumberOfRecords);
         Btreefile.write ((char *) &node, sizeof node);
-
     }
     Btreefile.close ();
 }
-void DisplayIndexFileContent (string Filename)
-{
+
+void DisplayIndexFileContent (string Filename) {
     int order = 5;
     BtreeNode readnode;
     ifstream file;
     file.open (Filename.c_str (), ios::in);
-    while(file.good())
-    {
-
-
+    while(file.good()) {
         file.read ((char *) &readnode, sizeof (BtreeNode));
         print_node_keys(readnode,order);
     }
     file.close ();
 }
-bool compareByLength( data &a,  data &b)
-{
+
+bool compareByLength( data &a,  data &b) {
     return a.key < b.key;
 }
 
-int findParent(fstream& file,BtreeNode node,int nodeRRN)
-{
+int findParent(fstream& file,BtreeNode node,int nodeRRN) {
     BtreeNode parent;
-
-    for(int g=0; g<10; g++)
-    {
+    for(int g=0; g<10; g++) {
         file.seekg(g*sizeof(BtreeNode),ios::beg);
         file.read((char*)&parent,sizeof(BtreeNode));
-        for(int i=0; i<5; i++)
-        {
-            if(  parent.keys[i].address==nodeRRN)
-            {
-
+        for(int i=0; i<5; i++) {
+            if(parent.keys[i].address==nodeRRN) {
                 return g;
             }
         }
     }
 }
-int split(string FileName,vector<data> vect,int splitnodeRRN,data newnode,bool child) //child 1 -> child //it return RRN
-// child = 0 -> is Not child
-{
 
+//child 1 -> child //it return RRN
+int split(string FileName,vector<data> vect,int splitnodeRRN,data newnode,bool child) {
     bool spliting=false; //check if this vector has been splitting before Or Not
-    for(int i=0; i<vect.size(); i++)
-    {
+    for(int i=0; i<vect.size(); i++) {
         if(vect.at(i).address<10)
             spliting=true;
     }
+    
     int searchkey=newnode.key;
     int index_of_node=0;
     vector<data>vector_keys;
@@ -143,11 +118,8 @@ int split(string FileName,vector<data> vect,int splitnodeRRN,data newnode,bool c
 
     file.seekg(0,ios::beg);
     file.read((char*)&header,sizeof(BtreeNode));
-
     file.seekg(splitnodeRRN*(sizeof(BtreeNode)),ios::beg);
     file.read((char*)&splitnode,sizeof(BtreeNode));
-
-
 
     /** Split Vector to 2 parts **/
     std::size_t const half_size = vect.size() / 2;
@@ -156,8 +128,8 @@ int split(string FileName,vector<data> vect,int splitnodeRRN,data newnode,bool c
 
 
     /*******************              Is CHILD        ***********************************************/
-    if(child==1)//child
-    {
+    //child 
+    if(child==1) {
         parentRRN=findParent(file,splitnode,splitnodeRRN);
         file.seekg(parentRRN*sizeof(BtreeNode),ios::beg);
         file.read((char*)&parent,sizeof(BtreeNode));
@@ -167,13 +139,11 @@ int split(string FileName,vector<data> vect,int splitnodeRRN,data newnode,bool c
         file.seekg(secChild_RRN*(sizeof(BtreeNode)),ios::beg);
         file.read((char*)&secChiled,sizeof(BtreeNode));
         /** Write first vector elements in first child  **/
-        for(int i=0; i<vec1.size(); i++)
-        {
+        for(int i=0; i<vec1.size(); i++) {
             firstchild.keys[i].key =vec1.at (i).key ;
             firstchild.keys[i].address= vec1.at (i).address;
         }
-        for(int i=3; i<5; i++)
-        {
+        for(int i=3; i<5; i++) {
             secChiled.keys[i].key =-1;
             secChiled.keys[i].address= -1;
             firstchild.keys[i].key =-1;
@@ -185,21 +155,21 @@ int split(string FileName,vector<data> vect,int splitnodeRRN,data newnode,bool c
         Max_vec1=*std::max_element(vec1.begin(),vec1.end(),compareByLength); //Get Max Element in vector 1
         Max_vec1.address=firstchild_RRN;
         /** Write second vector elements in sec child  **/
-        for(int i=0; i<vec2.size(); i++)
-        {
+        for(int i=0; i<vec2.size(); i++) {
             secChiled.keys[i].key =vec2.at (i).key ;
             secChiled.keys[i].address= vec2.at (i).address;
         }
+        
         secChiled.leaf=0; //it is leaf now
         file.seekp(secChild_RRN*(sizeof (BtreeNode)),ios::beg);
         file.write((char*)&secChiled,sizeof(BtreeNode));
 
         //update the parent
         vector_keys.clear();
-        for (int i=0; i<5; i++) //load not empty pairs
-        {
-            if(parent.keys[i].address!=-1)
-            {
+        
+        //load not empty pairs
+        for (int i=0; i<5; i++) {
+            if(parent.keys[i].address!=-1) {
                 data nodeElement;
                 nodeElement.key =parent.keys[i].key;
                 nodeElement.address =parent.keys[i].address;
@@ -207,28 +177,18 @@ int split(string FileName,vector<data> vect,int splitnodeRRN,data newnode,bool c
                 std::sort(vector_keys.begin(), vector_keys.end(), compareByLength);
             }
         }
+        
         vector_keys.push_back(Max_vec1);
-
-
+        
         std::sort(vector_keys.begin(), vector_keys.end(), compareByLength);
-        if(vector_keys.size()>5) //5 -> Order
-        {
-
-
-
-
-
-
-
+        //5 -> Order
+        if(vector_keys.size()>5) {
             split(FileName,vector_keys,parentRRN,newnode,false);
             return 0;
         }
-        else if(vector_keys.size()<=5) //5 -> Order
-        {
-
-
-            for(int i=0; i<vector_keys.size(); i++)
-            {
+         //5 -> Order
+        else if(vector_keys.size()<=5) {
+            for(int i=0; i<vector_keys.size(); i++) {
                 parent.keys[i].key =vector_keys.at (i).key ;
                 parent.keys[i].address= vector_keys.at (i).address;
             }
@@ -239,22 +199,18 @@ int split(string FileName,vector<data> vect,int splitnodeRRN,data newnode,bool c
             file.seekp(0*(sizeof (BtreeNode)),ios::beg);
             file.write((char*)&header,sizeof(BtreeNode));
 
-            auto it = find_if(vec1.begin(), vec1.end(),[&searchkey](const data& obj)
-            {
+            auto it = find_if(vec1.begin(), vec1.end(),[&searchkey](const data& obj) {
                 return obj.key == searchkey;
             });
             if(it != vec1.end())
                 index_of_node=firstchild_RRN;
             else
                 index_of_node=secChild_RRN;
-
             return index_of_node;
         }
-
     }
     /*******************              NOT CHILD        ***********************************************/
-    else if(child==0)
-    {
+    else if(child==0) {
         //first and sec is new nodes
         firstchild_RRN=header.keys[0].key;
         file.seekg(firstchild_RRN*(sizeof(BtreeNode)),ios::beg);
@@ -264,17 +220,14 @@ int split(string FileName,vector<data> vect,int splitnodeRRN,data newnode,bool c
         file.read((char*)&secChiled,sizeof(BtreeNode));
 
         /** Write first vector elements in first child  **/
-        for(int i=0; i<vec1.size(); i++)
-        {
+        for(int i=0; i<vec1.size(); i++) {
             firstchild.keys[i].key =vec1.at (i).key ;
             firstchild.keys[i].address= vec1.at (i).address;
         }
-        if(spliting)
-        {
+        if(spliting) {
             firstchild.leaf=1; //it is Not Leaf
         }
-        else
-        {
+        else {
             firstchild.leaf=0; //it is leaf now
         }
         file.seekp(firstchild_RRN*(sizeof (BtreeNode)),ios::beg);
@@ -283,17 +236,14 @@ int split(string FileName,vector<data> vect,int splitnodeRRN,data newnode,bool c
         Max_vec1.address=firstchild_RRN;
 
         /** Write secound vector elements in sec child  **/
-        for(int i=0; i<vec2.size(); i++)
-        {
+        for(int i=0; i<vec2.size(); i++) {
             secChiled.keys[i].key =vec2.at (i).key ;
             secChiled.keys[i].address= vec2.at (i).address;
         }
-        if(spliting)
-        {
+        if(spliting) {
             secChiled.leaf=1; //it is Not Leaf
         }
-        else
-        {
+        else {
             secChiled.leaf=0; //it is leaf now
         }
 
@@ -306,11 +256,13 @@ int split(string FileName,vector<data> vect,int splitnodeRRN,data newnode,bool c
         splitnode.keys[0].address=Max_vec1.address;
         splitnode.keys[1].key=Max_vec2.key;
         splitnode.keys[1].address=Max_vec2.address;
-        for(int i=2; i<5; i++) //Update other pairs To be -1
-        {
+        
+        //Update other pairs To be -1
+        for(int i=2; i<5; i++)  {
             splitnode.keys[i].key=-1;
             splitnode.keys[i].address=-1;
         }
+        
         splitnode.leaf=1; //it is NOT leaf Now because it has index of firstChild , SecChild
         file.seekp(splitnodeRRN*(sizeof (BtreeNode)),ios::beg);
         file.write((char*)&splitnode,sizeof(BtreeNode));//write split node in file
@@ -319,19 +271,15 @@ int split(string FileName,vector<data> vect,int splitnodeRRN,data newnode,bool c
         file.seekp(0*(sizeof (BtreeNode)),ios::beg);
         file.write((char*)&header,sizeof(BtreeNode));
         file.close();
-        auto it = find_if(vec1.begin(), vec1.end(), [&searchkey](const data& obj)
-        {
+        auto it = find_if(vec1.begin(), vec1.end(), [&searchkey](const data& obj) {
             return obj.key == searchkey;
         });
-        if(it != vec1.end())
-        {
+        if(it != vec1.end()) {
             return(firstchild_RRN);
         }
         else
             return(secChild_RRN);
-
     }
-
 }
 
 int InsertNewRecordAtIndex (string FileName, int Key, int Address)
@@ -356,9 +304,8 @@ int InsertNewRecordAtIndex (string FileName, int Key, int Address)
     file.seekg(1*(sizeof (BtreeNode)),ios::beg);
     file.read((char*)&root,sizeof(BtreeNode));
 
-    if(root.leaf==-1) //base case
-    {
-
+    //base case
+    if(root.leaf==-1) {
         RRN=root.keys[0].key; //Get RRN Which Root Point to
         header.keys[0].key=RRN;
         root.keys[0].key=newelemnt.key;
@@ -366,20 +313,16 @@ int InsertNewRecordAtIndex (string FileName, int Key, int Address)
         root.leaf=0;
         file.seekp(1*(sizeof (BtreeNode)),ios::beg);
         file.write((char*)&root,sizeof(BtreeNode));
-
         file.seekp(0,ios::beg);
         file.write((char*)&header,sizeof(BtreeNode));
-
         file.close();
         return (header.keys[0].key-1) ;
     }
 
-    else if(root.leaf==0)
-    {
-        for (int i=0; i<order; i++) //load not empty pairs
-        {
-            if(root.keys[i].address!=-1)
-            {
+    else if(root.leaf==0) {
+        //load not empty pairs
+        for (int i=0; i<order; i++)  {
+            if(root.keys[i].address!=-1) {
                 data nodeElement;
                 nodeElement.key =root.keys[i].key;
                 nodeElement.address =root.keys[i].address;
@@ -392,52 +335,42 @@ int InsertNewRecordAtIndex (string FileName, int Key, int Address)
 
         numberofelements=vector_keys.size(); //get the current number of elements that vector hold
 
-        if(numberofelements>order)
-        {
+        if(numberofelements>order) {
             ///we should apply the split here
             indexNode=split(FileName,vector_keys,1,newelemnt,false);
-
             file.close();
-
             return indexNode; //not correct yet,, Waiting to use search here
         }
-        else  if (numberofelements<=order)
-        {
-            for(int i=0; i<vector_keys.size(); i++)
-            {
+        else  if (numberofelements<=order) {
+            for(int i=0; i<vector_keys.size(); i++) {
                 root.keys[i].key =vector_keys.at (i).key ;
                 root.keys[i].address= vector_keys.at (i).address;
             }
+            
             root.leaf=0; //it is leaf now
             file.seekp(1*(sizeof (BtreeNode)),ios::beg);
             file.write((char*)&root,sizeof(BtreeNode));
             file.seekp(0,ios::beg);
-            if(numberofelements==order)
-            {
+            if(numberofelements==order) {
                 header.keys[0].key=RRN+1;
             }
+            
             header.keys[0].key=RRN;
             file.write((char*)&header,sizeof(BtreeNode));
             file.close();
             return RRN-1;
         }
-
     }
-    else if(root.leaf==1)
-    {
-        for(int i=0; i<5; i++)
-        {
-
-            if(root.keys[i].key>=newelemnt.key)
-            {
+    else if(root.leaf==1) {
+        for(int i=0; i<5; i++) {
+            if(root.keys[i].key>=newelemnt.key) {
                 arr_RRN[i]=root.keys[i].address;//RRN=2
                 file.seekg(arr_RRN[i]*sizeof(BtreeNode),ios::beg);
                 file.read((char*)&current,sizeof(BtreeNode));
-
-                for (int i=0; i<order; i++) //load not empty pairs
-                {
-                    if(current.keys[i].address!=-1)
-                    {
+                
+                //load not empty pairs
+                for (int i=0; i<order; i++) {
+                    if(current.keys[i].address!=-1) {
                         data nodeElement;
                         nodeElement.key =current.keys[i].key;
                         nodeElement.address =current.keys[i].address;
@@ -450,19 +383,14 @@ int InsertNewRecordAtIndex (string FileName, int Key, int Address)
 
                 numberofelements=vector_keys.size(); //get the current number of elements that vector hold
 
-                if(numberofelements>order)
-                {
+                if(numberofelements>order) {
                     ///we should apply the split here
-
                     indexNode=split(FileName,vector_keys,arr_RRN[i],newelemnt,true); //index node hold the RRN where the new element added
-
                     file.close();
                     return indexNode; ///not correct yet,, Waiting to use search here
                 }
-                else  if (numberofelements<=order)
-                {
-                    for(int i=0; i<vector_keys.size(); i++)
-                    {
+                else  if (numberofelements<=order) {
+                    for(int i=0; i<vector_keys.size(); i++) {
                         current.keys[i].key =vector_keys.at (i).key ;
                         current.keys[i].address= vector_keys.at (i).address;
                     }
@@ -470,8 +398,7 @@ int InsertNewRecordAtIndex (string FileName, int Key, int Address)
                     file.seekp(arr_RRN[i]*(sizeof (BtreeNode)),ios::beg);
                     file.write((char*)&current,sizeof(BtreeNode));
                     file.seekp(0,ios::beg);
-                    if(numberofelements==order)
-                    {
+                    if(numberofelements==order) {
                         header.keys[0].key=RRN+1;
                     }
                     header.keys[0].key=RRN;
@@ -479,14 +406,13 @@ int InsertNewRecordAtIndex (string FileName, int Key, int Address)
                     file.close();
                     return arr_RRN[i];
                 }
-
-
             }
         }
-        for(int i=0; i<5; i++) //get Root's element to know which is the last element
-        {
-            if(root.keys[i].address!=-1) //load all non empty keys on root
-            {
+        
+        //get Root's element to know which is the last element      
+        for(int i=0; i<5; i++)  {
+            //load all non empty keys on root
+            if(root.keys[i].address!=-1) {
                 data nodeElement;
                 nodeElement.key =root.keys[i].key;
                 nodeElement.address =root.keys[i].address;
@@ -494,6 +420,7 @@ int InsertNewRecordAtIndex (string FileName, int Key, int Address)
                 std::sort(vector_keys.begin(), vector_keys.end(), compareByLength);
             }
         }
+        
         data last_Element;
         last_Element.key=vector_keys.back().key; // hold the last one
         last_Element.address=vector_keys.back().address;
@@ -501,23 +428,20 @@ int InsertNewRecordAtIndex (string FileName, int Key, int Address)
 
         file.seekg(last_Element.address*sizeof(BtreeNode),ios::beg); //seeking to this given address
         file.read((char*)&current,sizeof(BtreeNode)); //Read the node which i will insert into
-        for(int i=0; i<5; i++)
-        {
-            if(current.keys[i].address!=-1)
-            {
+        for(int i=0; i<5; i++) {
+            if(current.keys[i].address!=-1) {
                 data nodeElement;
                 nodeElement.key =current.keys[i].key;
                 nodeElement.address =current.keys[i].address;
                 vector_keys.push_back(nodeElement);
                 std::sort(vector_keys.begin(), vector_keys.end(), compareByLength);
             }
-
         }
+        
         vector_keys.push_back(newelemnt);
         std::sort(vector_keys.begin(), vector_keys.end(), compareByLength);
         numberofelements=vector_keys.size(); //get the current number of elements that vector hold
-        if(numberofelements>order)
-        {
+        if(numberofelements>order) {
             ///we should apply the split here
             indexNode=split(FileName,vector_keys,last_Element.address,newelemnt,true); //index node hold the RRN where the new element added
             BtreeNode parent;
@@ -525,22 +449,20 @@ int InsertNewRecordAtIndex (string FileName, int Key, int Address)
             parent_RRN=findParent(file,current,last_Element.address);
             file.seekg(parent_RRN*sizeof(BtreeNode),ios::beg);
             file.read((char*)&parent,sizeof(BtreeNode));
-            for(int i=0; i<5; i++)
-            {
-                if( parent.keys[i].address==last_Element.address
-                        && parent.keys[i].key<newelemnt.key )
-                {
+            for(int i=0; i<5; i++) {
+                if( parent.keys[i].address==last_Element.address && parent.keys[i].key<newelemnt.key ) {
                     parent.keys[i].key=newelemnt.key;
                     break;
                 }
             }
+            
             file.close();
             return indexNode; ///not correct yet,, Waiting to use search here
         }
-        else  if (numberofelements<=order) //there is place
-        {
-            for(int i=0; i<vector_keys.size(); i++)
-            {
+        
+         //there is place
+        else  if (numberofelements<=order) {
+            for(int i=0; i<vector_keys.size(); i++) {
                 current.keys[i].key =vector_keys.at (i).key ;
                 current.keys[i].address= vector_keys.at (i).address;
             }
@@ -553,20 +475,17 @@ int InsertNewRecordAtIndex (string FileName, int Key, int Address)
             parent_RRN=findParent(file,current,last_Element.address);
             file.seekg(parent_RRN*sizeof(BtreeNode),ios::beg);
             file.read((char*)&parent,sizeof(BtreeNode));
-            for(int i=0; i<5; i++)
-            {
-                if( parent.keys[i].address==last_Element.address
-                        && parent.keys[i].key<newelemnt.key )
-                {
+            for(int i=0; i<5; i++) {
+                if( parent.keys[i].address==last_Element.address && parent.keys[i].key<newelemnt.key ) {
                     parent.keys[i].key=newelemnt.key;
                     break;
                 }
             }
+            
             file.seekp(parent_RRN*sizeof(BtreeNode),ios::beg);
             file.write((char*)&parent,sizeof(BtreeNode));
             file.seekp(0,ios::beg);
-            if(numberofelements==order)
-            {
+            if(numberofelements==order) {
                 header.keys[0].key=RRN+1;
             }
             header.keys[0].key=RRN;
@@ -580,120 +499,100 @@ int InsertNewRecordAtIndex (string FileName, int Key, int Address)
 
 vector <int> v ;
 vector <int> address;
-void search (BtreeNode node, int order)
-{
-    for (std::size_t i = 0; i < order; i++)
-    {
-        if(node.keys[i].key !=-1 && node.keys[i].address!=-1  )
-        {
+void search (BtreeNode node, int order) {
+    for (std::size_t i = 0; i < order; i++) {
+        if(node.keys[i].key !=-1 && node.keys[i].address!=-1 ) {
             v.push_back(node.keys[i].key);
             address.push_back(node.keys[i].address);
         }
     };
 }
-int SearchARecord2 (string Filename, int RecordID)
-{
+
+int SearchARecord2 (string Filename, int RecordID) {
     int order = 5;
     string flag;
     BtreeNode readnode;
     ifstream file;
     file.open (Filename.c_str (), ios::in);
-    while(file.good())
-    {
+    while(file.good()) {
         search(readnode,order);
         file.read ((char *) &readnode, sizeof (BtreeNode));
     }
+    
     cout<<endl;
     auto it = find(v.begin(), v.end(), RecordID);
-    if (it != v.end())
-    {
+    if (it != v.end()) {
         int index = it - v.begin();
         int x = address.at(index);
         return x;
     }
-    else
-    {
+    else {
         return -1;
     }
 
     file.close ();
 }
-int searchHelpler(fstream &file,BtreeNode node,int key)
-{
+
+int searchHelpler(fstream &file,BtreeNode node,int key) {
     BtreeNode current;
     int nextRRN;
-
-    if(node.leaf==0) //only root is in file
-    {
-        for(int i=0; i<5; i++)
-        {
-
+    //only root is in file
+    if(node.leaf==0) {
+        for(int i=0; i<5; i++) {
             if(node.keys[i].key==key)
                 return node.keys[i].address;
             else
                 break;
         }
-
     }
-    else if(node.leaf==1)
-    {
-        for(int i=0; i<5; i++) //go through root elements
-        {
+    else if(node.leaf==1) {
+        //go through root elements
+        for(int i=0; i<5; i++)  {
             nextRRN=node.keys[i].address;
             file.seekg(nextRRN*sizeof(BtreeNode),ios::beg); // Read Pointer at root node
             file.read((char*)&current,sizeof(BtreeNode));
-            if(current.leaf==0)
-            {
-                for(int i=0; i<5; i++)
-                {
-                    if(current.keys[i].key==key)
-                    {
+            if(current.leaf==0) {
+                for(int i=0; i<5; i++) {
+                    if(current.keys[i].key==key) {
                         file.close();
                         return current.keys[i].address;
                     }
-
                 }
             }
-            else if(current.leaf==1)
-            {
+            
+            else if(current.leaf==1) {
                 searchHelpler(file,current,key);
             }
         }
         file.close();
         return -1;
     }
-
 }
-int SearchaRecord3 (string filename, int RecordID)
-{
+
+int SearchaRecord3 (string filename, int RecordID) {
     BtreeNode root,current;
     int nextRRN;
     fstream file;
     file.open(filename.c_str(),ios::out|ios::in);
     file.seekg(1*sizeof(BtreeNode),ios::beg); // Read Pointer at root node
     file.read((char*)&root,sizeof(BtreeNode)); //load the root
-    if(root.leaf==-1)
-    {
+    if(root.leaf==-1) {
         file.close();
         return 0;
     }
-    else if(root.leaf==0) //only root is in file
-    {
-        for(int i=0; i<5; i++)
-        {
+     //only root is in file
+    else if(root.leaf==0) {
+        for(int i=0; i<5; i++) {
             if(root.keys[i].key==RecordID)
                 return root.keys[i].address;
         }
     }
-    else if(root.leaf==1)
-    {
+    else if(root.leaf==1) {
         return searchHelpler(file,root,RecordID);
     }
-
 }
 
-int SearchARecord1 (string Filename, int RecordID)
-{
+int SearchARecord1 (string Filename, int RecordID) {
     fstream file;
     file.open (Filename.c_str (), ios::in | ios::out);
     file.seekg (0, ios::beg);
@@ -703,61 +602,43 @@ int SearchARecord1 (string Filename, int RecordID)
     file.seekg(1*(sizeof (BtreeNode)),ios::beg);
     file.read((char*)&root,sizeof(BtreeNode));
 
-    if(root.leaf==-1)
-    {
+    if(root.leaf==-1) {
         return 0;
     }
-    if(root.leaf==1)
-    {
-        for (int g = 2; g < 10; g++)
-        {
+    if(root.leaf==1) {
+        for (int g = 2; g < 10; g++) {
             file.seekg(g*sizeof(BtreeNode),ios::beg);
             file.read ((char *) &node, sizeof (BtreeNode));
-
-            for (int i = 0; i < 5; i++)
-            {
+            for (int i = 0; i < 5; i++) {
                 element.key = node.keys[i].key;
                 element.address = node.keys[i].address;
-                if (element.address != -1)
-                {
-                    if (node.keys[i].key == RecordID)
-                    {
+                if (element.address != -1) {
+                    if (node.keys[i].key == RecordID) {
                         cout << "records\nnode key is : " << node.keys[i].key <<" and it's address is : " <<node.keys[i].address << endl;
-                        //flag =node.keys[i].address;
                         return node.keys[i].address;
                     }
                 }
             }
         }
-
     }
-    if(root.leaf == 0)
-    {
+    if(root.leaf == 0) {
        file.seekg(1*sizeof(BtreeNode),ios::beg);
             file.read ((char *) &node, sizeof (BtreeNode));
-
-            for (int i = 0; i < 5; i++)
-            {
+            for (int i = 0; i < 5; i++) {
                 element.key = node.keys[i].key;
                 element.address = node.keys[i].address;
-                if (element.address != -1)
-                {
-                    if (node.keys[i].key == RecordID)
-                    {
+                if (element.address != -1) {
+                    if (node.keys[i].key == RecordID){
                         cout << "node key is : " << node.keys[i].key <<" and it's address is : " <<node.keys[i].address << endl;
-                        //flag =node.keys[i].address;
                         return node.keys[i].address;
                     }
                 }
             }
     }
-
     return -1;
-
 }
 
-int DeleteARecord (string FileName, int RecordID)
-{
+int DeleteARecord (string FileName, int RecordID) {
     fstream file;
     file.open (FileName.c_str (), ios::in | ios::out);
     file.seekg (0, ios::beg);
@@ -766,54 +647,44 @@ int DeleteARecord (string FileName, int RecordID)
     vector <data> deleteElement ;
     vector <int> TheKeys;
     int RRN;
-    for (int g = 0; g < 10; g++)
-    {
+    for (int g = 0; g < 10; g++) {
         file.seekg (g * sizeof (BtreeNode), ios::beg);
         file.read ((char *) &node, sizeof (BtreeNode));
-        for (int i = 0; i < 5; i++)
-        {
+        for (int i = 0; i < 5; i++) {
             element.key = node.keys[i].key;
             element.address = node.keys[i].address;
-            if (node.keys[i].key == RecordID)
-            {
-                for(int i =0 ; i<5 ; i++)
-                {
+            if (node.keys[i].key == RecordID) {
+                for(int i =0 ; i<5 ; i++) {
                     data nodeElement;
                     nodeElement.key =node.keys[i].key;
                     nodeElement.address =node.keys[i].address;
-                    if(nodeElement.address !=-1)
-                    {
+                    if(nodeElement.address !=-1) {
                         deleteElement.push_back(nodeElement);
                         TheKeys.push_back(nodeElement.key);
                     }
                 }
                 auto it = find(TheKeys.begin(), TheKeys.end(), RecordID);
                 int index;
-                if (it != TheKeys.end())
-                {
+                if (it != TheKeys.end()) {
                     index = it - TheKeys.begin();
                 }
                 int currentposition=file.tellp();
                 deleteElement.erase(deleteElement.begin() + index);
                 std::sort(deleteElement.begin(), deleteElement.end(), compareByLength);
                 int VecSize = deleteElement.size();
-                for(int i=0; i<5; i++)
-                {
-                    if(VecSize !=0)
-                    {
+                for(int i=0; i<5; i++) {
+                    if(VecSize !=0) {
                         node.keys[i].key =deleteElement.at (i).key ;
                         node.keys[i].address= deleteElement.at (i).address;
                         VecSize --;
                     }
-                    else
-                    {
+                    else {
                         node.keys[i].key = -1;
                         node.keys[i].address = -1;
                     }
                 }
                 file.seekp(RRN*(sizeof (BtreeNode)),ios::beg);
                 file.write((char*)&node,sizeof(BtreeNode));
-
                 return element.address;
             }
         }
@@ -822,18 +693,13 @@ int DeleteARecord (string FileName, int RecordID)
     return -1;
 }
 
-int main ()
-{
+int main () {
    string filename = "btree.txt";
-
     CreateIndexFile (filename, 10);
-
     data newelement;
     int key;
-
     int ch1;
-    do
-    {
+    do {
         cout<<endl;
         cout<<"\t\t\t**********"<<endl;
         cout<<"\t\t\t** To Insert press--> (1)**"<<endl;
@@ -843,8 +709,7 @@ int main ()
         cout<<"\t\t\t** To Exit   press--> (5)**"<<endl;
         cout<<"\t\t\t**********"<<endl;
         cin>>ch1;
-        switch(ch1)
-        {
+        switch(ch1) {
         case 1:
             cout<<"Enter Key : ";
             cin>>newelement.key;
@@ -861,30 +726,24 @@ int main ()
             cout<<"Enter Key To Search : ";
             cin>>key;
             int Search =SearchARecord1(filename,key);
-            if(Search == -1)
-            {
+            if(Search == -1){
                 cout<<Search << endl <<"not found"<<endl;
             }
-            else if(Search==0)
-            {
+            else if(Search==0) {
                 cout<<"File Is Empty .. "<<endl;
             }
-
             break;
-
         }
         case 4:
         {
             cout<<"Enter Key To Be Deleted : ";
             cin>>key;
             int del = DeleteARecord(filename,key);
-            if(del == -1)
-            {
+            if(del == -1) {
                 cout <<del << endl;
                 cout<<"not found \n";
             }
-            else
-            {
+            else{
                 cout << "found \nthe key " << key << " at address = "<< del <<" deleted successfully "<<endl;
             }
             break;
